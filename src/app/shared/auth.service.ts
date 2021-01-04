@@ -10,7 +10,7 @@ import { Router } from '@angular/router';
 })
 
 export class AuthService {
-  endpoint: string = 'http://localhost:4000/api';
+  endpoint: string = 'http://localhost:8080/api';
   headers = new HttpHeaders().set('Content-Type', 'application/json');
   currentUser = {};
 
@@ -22,7 +22,7 @@ export class AuthService {
 
   // Sign-up
   signUp(user: User): Observable<any> {
-    let api = `${this.endpoint}/register-user`;
+    let api = `${this.endpoint}/auth/signup`;
     return this.http.post(api, user)
       .pipe(
         catchError(this.handleError)
@@ -31,27 +31,27 @@ export class AuthService {
 
   // Sign-in
   signIn(user: User) {
-    return this.http.post<any>(`${this.endpoint}/signin`, user)
+    return this.http.post<any>(`${this.endpoint}/auth/login`, user)
       .subscribe((res: any) => {
-        localStorage.setItem('access_token', res.token)
+        localStorage.setItem('accessToken', res.accessToken)
         this.getUserProfile(res._id).subscribe((res) => {
           this.currentUser = res;
-          this.router.navigate(['user-profile/' + res.msg._id]);
+          this.router.navigate(['user-profile/' + res.name]);
         })
       })
   }
 
   getToken() {
-    return localStorage.getItem('access_token');
+    return localStorage.getItem('accessToken');
   }
 
   get isLoggedIn(): boolean {
-    let authToken = localStorage.getItem('access_token');
+    let authToken = localStorage.getItem('accessToken');
     return (authToken !== null) ? true : false;
   }
 
   doLogout() {
-    let removeToken = localStorage.removeItem('access_token');
+    let removeToken = localStorage.removeItem('accessToken');
     if (removeToken == null) {
       this.router.navigate(['log-in']);
     }
@@ -59,16 +59,17 @@ export class AuthService {
 
   // User profile
   getUserProfile(id): Observable<any> {
-    let api = `${this.endpoint}/user-profile/${id}`;
+    let api = `${this.endpoint}/user/me`;
     return this.http.get(api, { headers: this.headers }).pipe(
       map((res: Response) => {
+        console.log('api result --> ' + JSON.stringify(res));
         return res || {}
       }),
       catchError(this.handleError)
     )
   }
 
-  // Error 
+  // Error
   handleError(error: HttpErrorResponse) {
     let msg = '';
     if (error.error instanceof ErrorEvent) {
